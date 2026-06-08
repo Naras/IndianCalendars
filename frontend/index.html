@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Indian Calendar Dashboard</title>
+    <style>
+      body {
+        font-family: 'Arial Unicode MS', 'Kohinoor Devanagari', sans-serif;
+        background-color: #1e1e1e;
+        color: #fff;
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        height: 100vh;
+        overflow: hidden;
+      }
+      #control-panel {
+        background-color: #2c2c2c;
+        padding: 15px;
+        border-radius: 8px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 15px;
+        align-items: center;
+        justify-content: center;
+        margin-top: 10px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+      }
+      .control-group {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+      }
+      label { font-size: 12px; color: #aaa; text-transform: uppercase; letter-spacing: 1px; }
+      select, button, input[type="number"] {
+        padding: 8px 12px;
+        background-color: #444;
+        color: white;
+        border: 1px solid #555;
+        border-radius: 4px;
+        font-size: 14px;
+      }
+      select:focus, button:focus, input:focus { outline: none; border-color: #4CAF50; }
+      #playback-controls { display: flex; gap: 10px; margin-top: 10px; align-items: flex-end;}
+      button.play-btn { background-color: #4CAF50; border: none; cursor: pointer; transition: 0.2s;}
+      button.play-btn:hover { background-color: #45a049; }
+      
+      #graph {
+        flex-grow: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      svg text {
+        font-size: 11px;
+        fill: #000;
+        pointer-events: none;
+        font-weight: 500;
+      }
+      .gear-path { stroke: #333; stroke-width: 1px; }
+    </style>
+  </head>
+  <body>
+    <div id="control-panel">
+      <div class="control-group">
+        <label>Visual Mode</label>
+        <select id="mode">
+          <option value="gears">Interlocking Gears</option>
+          <option value="concentric">Static Concentric</option>
+          <option value="sync_concentric">Synced Concentric</option>
+        </select>
+      </div>
+      <div class="control-group">
+        <label>Script</label>
+        <select id="script">
+          <option value="devanagari">Devanagari</option>
+          <option value="kannada">Kannada</option>
+          <option value="IAST">IAST</option>
+          <option value="ITRANS">ITRANS</option>
+        </select>
+      </div>
+      <div class="control-group">
+        <label>Cycle 1 (Outer/Left)</label>
+        <select id="cycle1"></select>
+      </div>
+      <div class="control-group">
+        <label>Start 1</label>
+        <select id="start1"></select>
+      </div>
+      <div class="control-group">
+        <label>Cycle 2 (Inner/Right)</label>
+        <select id="cycle2"></select>
+      </div>
+      <div class="control-group">
+        <label>Start 2</label>
+        <select id="start2"></select>
+      </div>
+      <div class="control-group">
+        <label>Radius 1</label>
+        <input type="number" id="radius1" value="150" min="50" max="500" style="width: 60px;">
+      </div>
+      <div class="control-group">
+        <label>Radius 2</label>
+        <input type="number" id="radius2" value="150" min="50" max="500" style="width: 60px;">
+      </div>
+      <div class="control-group">
+        <label>Font Size</label>
+        <input type="number" id="font-size" value="11" min="5" max="30" style="width: 60px;">
+      </div>
+      <div class="checkbox-group">
+        <input type="checkbox" id="checkValidity" name="checkTheValidity" checked>
+        <label for="vehicle1">Check for valid matching circles</label>
+      </div>
+      <div id="playback-controls">
+        <button id="btn-prev" class="play-btn">◀ Prev</button>
+        <button id="btn-play" class="play-btn">⏯ Play/Pause</button>
+        <button id="btn-next" class="play-btn">Next ▶</button>
+      </div>
+    </div>
+    
+    <div id="graph"></div>
+    <script type="module" src="/main.js"></script>
+  </body>
+</html>
