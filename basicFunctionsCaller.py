@@ -40,7 +40,7 @@ print(f'पक्ष:मास: {cycleRatios(basicDictsLists["पक्ष"], ba
       f'नक्षत्र:मास {cycleRatios(basicDictsLists["नक्षत्र"], basicDictsLists["शुक्ल च कृष्णा तिथियाँ"])}')
 
 print(f'\nmaps ऋतू:मास:{cycleMaps(basicDictsLists["ऋतु"], basicDictsLists["मास"])}\n'
-      f'मास:ऋतू:{cycleMaps(basicDictsLists["मास"], basicDictsLists["ऋतु"])}\n'
+      f'मास:ऋतु:{cycleMaps(basicDictsLists["मास"], basicDictsLists["ऋतु"])}\n'
       f'पक्ष:मास:{cycleMaps(basicDictsLists["पक्ष"], basicDictsLists["शुक्ल च कृष्णा तिथियाँ"])}\n'
       f'मास:पक्ष:{cycleMaps(basicDictsLists["शुक्ल च कृष्णा तिथियाँ"], basicDictsLists["पक्ष"])}'
       )

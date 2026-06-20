@@ -1,5 +1,8 @@
 import * as d3 from 'd3';
 
+const API_BASE = import.meta.env.DEV ? 'http://localhost:8000' : '/indiancalendars';
+
+
 const width = window.innerWidth;
 const height = window.innerHeight - 150; // account for control panel
 const svg = d3.select("#graph").append("svg")
@@ -62,7 +65,7 @@ async function init() {
 
 async function fetchCycles() {
     const scr = scriptEl.value;
-    const res = await fetch(`http://localhost:8000/api/cycles?script=${scr}`);
+    const res = await fetch(`${API_BASE}/api/cycles?script=${scr}`);
     state.cyclesData = await res.json();
     
     const c1 = cycle1El.value;
@@ -109,10 +112,9 @@ async function fetchData() {
     const s1 = start1El.value;
     const s2 = start2El.value;
     const scr = scriptEl.value;
+
     const checkValidity = document.getElementById("checkValidity").checked;
-    var endpoint;
-    // alert("checkValidity:" + restrict);
-    const res = await fetch(`http://localhost:8000/api/gears?cycle1=${c1}&cycle2=${c2}&start1=${s1}&start2=${s2}&script=${scr}&checkValidMatching=${checkValidity}`);
+    const res = await fetch(`${API_BASE}/api/gears?cycle1=${c1}&cycle2=${c2}&start1=${s1}&start2=${s2}&script=${scr}&checkValidMatching=${checkValidity}`);
     const data = await res.json();
     // console.log("Received data:", data);
         if (data.valid) {
@@ -191,6 +193,7 @@ function draw() {
     const data2 = Array.from({length: state.gear2.size}).map((_, i) => ({
         value: 1, label: state.gear2.items[(i + state.start2_idx) % state.gear2.size], idx: i
     }));
+    if (state.mode === 'gears') data2.reverse(); // Reverse inner gear for proper meshing in gears mode
     const arcs2 = g2.selectAll(".arc2").data(pie2(data2)).enter().append("g").attr("class", "arc2");
     arcs2.append("path").attr("d", arc2).attr("class", "gear-path").attr("fill", d => colors2(d.data.idx));
     arcs2.append("text")
@@ -216,56 +219,47 @@ function applyRotation(duration = 500) {
     const w2_deg = 360 / state.gear2.size;
 
     let rot1 = 0, rot2 = 0;
+        
+    // General alignment based on list length ratios
+    const ratioOuterInner = state.gear1.size / state.gear2.size;
+    const isIntegerRatioOuterInner = Number.isInteger(ratioOuterInner) && ratioOuterInner > 1;
+    const ratioInnerOuter = state.gear2.size / state.gear1.size;
+    const isIntegerRatioInnerOuter = Number.isInteger(ratioInnerOuter) && ratioInnerOuter > 1;
+    // const innerHasTwoItems = state.gear2.size === 2;
+    
+    // If outer items span multiple inner items (integer ratio), offset outer by half segment
+    // to center the group of outer items with each inner item
+    const outerOffset = -w1_deg / 2 // isIntegerRatioOuterInner ? (-w1_deg / 2) : 0;
+    
+    // If inner has 2 items, rotate by 90deg for horizontal division
+    // const innerOffset = innerHasTwoItems ? 90 : 0;
+    const innerOffset = isIntegerRatioInnerOuter ? (-w2_deg / 2) : 0;
 
     if (state.mode === 'gears') {
-        const base_rot1 = 90 - (w1_deg / 2);
-        const base_rot2 = -90 - (w2_deg / 2);
-        rot1 = base_rot1 + (state.step * w1_deg);
-        rot2 = base_rot2 - (state.step * w2_deg);
+        // console.log("Applying rotation in gears mode with ratios:", ratioOuterInner, ratioInnerOuter);
+        const alignment = state.gear2.size === 2 ? 90 : 0
+        const base_rot1 = 90 - w1_deg / 1; // Start with 0th item at top, then offset by half segment of the outer gear to align with inner);
+        const base_rot2 = -90 - alignment + w2_deg / 2; // - ratioOuterInner * w2_deg;
+        // console.log("Base rotations:", base_rot1, base_rot2, "adjustment 2: ", -alignment);
+        // rot1 = base_rot1 + (state.step * w1_deg);
+        // rot2 = base_rot2 - (state.step * w2_deg);
+        const deg = w1_deg > w2_deg ? w2_deg : w1_deg // Math.min(w1_deg, w2_deg);
+        rot1 = base_rot1 + (state.step * deg);
+        rot2 = base_rot2 - (state.step * deg);
     } 
     else if (state.mode === 'sync_concentric') {
         // Both start at top (12 o'clock in D3 is 0deg). 
         // We want the 0th item to be centered at top.
         const base_rot1 = - (w1_deg / 2);
         const base_rot2 = - (w2_deg / 2);
-        
-        // General alignment based on list length ratios
-        const ratioOuterInner = state.gear1.size / state.gear2.size;
-        const isIntegerRatioOuterInner = Number.isInteger(ratioOuterInner) && ratioOuterInner > 1;
-        const ratioInnerOuter = state.gear2.size / state.gear1.size;
-        const isIntegerRatioInnerOuter = Number.isInteger(ratioInnerOuter) && ratioInnerOuter > 1;
-        // const innerHasTwoItems = state.gear2.size === 2;
-        
-        // If outer items span multiple inner items (integer ratio), offset outer by half segment
-        // to center the group of outer items with each inner item
-        const outerOffset = isIntegerRatioOuterInner ? (-w1_deg / 2) : 0;
-        
-        // If inner has 2 items, rotate by 90deg for horizontal division
-        // const innerOffset = innerHasTwoItems ? 90 : 0;
-        const innerOffset = isIntegerRatioInnerOuter ? (-w2_deg / 2) : 0;
-        
-        rot1 = base_rot1 + outerOffset * (ratioOuterInner-1) - (state.step * w1_deg);
-        rot2 = base_rot2 + innerOffset * (ratioInnerOuter-1) - (state.step * w2_deg);
+        const deg = w1_deg > w2_deg ? w2_deg : w1_deg // Math.min(w1_deg, w2_deg);
+        rot1 = base_rot1 + outerOffset * (ratioOuterInner-1) - (state.step * deg);
+        rot2 = base_rot2 + innerOffset * (ratioInnerOuter-1) - (state.step * deg);
     }
     else if (state.mode === 'concentric') {
         // Static Concentric
         const base_rot1 = - (w1_deg / 2);
         const base_rot2 = - (w2_deg / 2);
-        
-        // General alignment based on list length ratios
-        const ratioOuterInner = state.gear1.size / state.gear2.size;
-        const isIntegerRatioOuterInner = Number.isInteger(ratioOuterInner) && ratioOuterInner > 1;
-        const ratioInnerOuter = state.gear2.size / state.gear1.size;
-        const isIntegerRatioInnerOuter = Number.isInteger(ratioInnerOuter) && ratioInnerOuter > 1;
-        // const innerHasTwoItems = state.gear2.size === 2;
-        
-        // If outer items span multiple inner items (integer ratio), offset outer by half segment
-        // to center the group of outer items with each inner item
-        const outerOffset = isIntegerRatioOuterInner ? (-w1_deg / 2) : 0;
-        
-        // If inner has 2 items, rotate by 90deg for horizontal division
-        // const innerOffset = innerHasTwoItems ? 90 : 0;
-        const innerOffset = isIntegerRatioInnerOuter ? (-w2_deg / 2) : 0;
         
         rot1 = base_rot1 + outerOffset * (ratioOuterInner-1);
         rot2 = base_rot2 + innerOffset * (ratioInnerOuter-1);
@@ -300,5 +294,200 @@ window.addEventListener('resize', () => {
     svg.attr("width", window.innerWidth).attr("height", window.innerHeight - 150);
     if(state.gear1) { draw(); }
 });
+
+// ==========================================
+// Tab Navigation Routing
+// ==========================================
+const tabs = document.querySelectorAll('.nav-tab');
+tabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+        // Remove active class from all tabs & view pages
+        tabs.forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.view-page').forEach(page => page.classList.remove('active'));
+
+        // Add active class to clicked tab and corresponding view page
+        tab.classList.add('active');
+        const targetId = tab.getAttribute('data-target');
+        const targetPage = document.getElementById(targetId);
+        targetPage.classList.add('active');
+    });
+});
+
+// ==========================================
+// Panchanga Calculator Logic
+// ==========================================
+let panchangaDate = new Date();
+
+// Elements
+const pNameInput = document.getElementById('panchanga-name');
+const pPlaceInput = document.getElementById('panchanga-place');
+const pDateInput = document.getElementById('panchanga-date');
+const pTimeInput = document.getElementById('panchanga-time');
+
+// Display labels in incrementers panel
+const valYear = document.getElementById('val-year');
+const valMonth = document.getElementById('val-month');
+const valDay = document.getElementById('val-day');
+const valHour = document.getElementById('val-hour');
+const valMinute = document.getElementById('val-minute');
+
+// Result containers / Status messages
+const pEmptyState = document.getElementById('panchanga-empty-state');
+const pLoadingState = document.getElementById('panchanga-loading');
+const pErrorState = document.getElementById('panchanga-error');
+const pResultsContainer = document.getElementById('panchanga-results-container');
+const pErrorText = document.getElementById('error-text');
+const pMetaSummary = document.getElementById('panchanga-summary-meta');
+
+// Synchronize javascript Date state to HTML Inputs and Incrementer UI Labels
+function syncDateTimeUI() {
+    const yyyy = panchangaDate.getFullYear();
+    const mm = String(panchangaDate.getMonth() + 1).padStart(2, '0');
+    const dd = String(panchangaDate.getDate()).padStart(2, '0');
+    const hh = String(panchangaDate.getHours()).padStart(2, '0');
+    const mn = String(panchangaDate.getMinutes()).padStart(2, '0');
+
+    // Sync input fields
+    pDateInput.value = `${yyyy}-${mm}-${dd}`;
+    pTimeInput.value = `${hh}:${mn}`;
+
+    // Sync incrementer labels
+    valYear.textContent = yyyy;
+    valMonth.textContent = mm;
+    valDay.textContent = dd;
+    valHour.textContent = hh;
+    valMinute.textContent = mn;
+}
+
+// Update date object when input controls change
+pDateInput.addEventListener('change', () => {
+    if (!pDateInput.value) return;
+    const [yyyy, mm, dd] = pDateInput.value.split('-').map(Number);
+    if (yyyy && mm && dd) {
+        panchangaDate.setFullYear(yyyy);
+        panchangaDate.setMonth(mm - 1);
+        panchangaDate.setDate(dd);
+        syncDateTimeUI();
+    }
+});
+
+pTimeInput.addEventListener('change', () => {
+    if (!pTimeInput.value) return;
+    const [hh, mn] = pTimeInput.value.split(':').map(Number);
+    if (hh !== undefined && mn !== undefined) {
+        panchangaDate.setHours(hh);
+        panchangaDate.setMinutes(mn);
+        syncDateTimeUI();
+    }
+});
+
+// Setup incrementer / decrementer click handlers
+function modifyDateUnit(unit, amount) {
+    if (unit === 'year') {
+        panchangaDate.setFullYear(panchangaDate.getFullYear() + amount);
+    } else if (unit === 'month') {
+        panchangaDate.setMonth(panchangaDate.getMonth() + amount);
+    } else if (unit === 'day') {
+        panchangaDate.setDate(panchangaDate.getDate() + amount);
+    } else if (unit === 'hour') {
+        panchangaDate.setHours(panchangaDate.getHours() + amount);
+    } else if (unit === 'minute') {
+        panchangaDate.setMinutes(panchangaDate.getMinutes() + amount);
+    }
+    syncDateTimeUI();
+}
+
+document.getElementById('inc-year').addEventListener('click', () => modifyDateUnit('year', 1));
+document.getElementById('dec-year').addEventListener('click', () => modifyDateUnit('year', -1));
+document.getElementById('inc-month').addEventListener('click', () => modifyDateUnit('month', 1));
+document.getElementById('dec-month').addEventListener('click', () => modifyDateUnit('month', -1));
+document.getElementById('inc-day').addEventListener('click', () => modifyDateUnit('day', 1));
+document.getElementById('dec-day').addEventListener('click', () => modifyDateUnit('day', -1));
+document.getElementById('inc-hour').addEventListener('click', () => modifyDateUnit('hour', 1));
+document.getElementById('dec-hour').addEventListener('click', () => modifyDateUnit('hour', -1));
+document.getElementById('inc-minute').addEventListener('click', () => modifyDateUnit('minute', 1));
+document.getElementById('dec-minute').addEventListener('click', () => modifyDateUnit('minute', -1));
+
+// Fetch Panchanga payload from backend API
+async function calculatePanchanga() {
+    const name = pNameInput.value.trim();
+    const place = pPlaceInput.value.trim();
+    
+    if (!name || !place) {
+        showStatus('empty');
+        return;
+    }
+
+    const yyyy = panchangaDate.getFullYear();
+    const mm = String(panchangaDate.getMonth() + 1).padStart(2, '0');
+    const dd = String(panchangaDate.getDate()).padStart(2, '0');
+    const hh = String(panchangaDate.getHours()).padStart(2, '0');
+    const mn = String(panchangaDate.getMinutes()).padStart(2, '0');
+    const dobFormatted = `${yyyy}/${mm}/${dd} ${hh}:${mn}`;
+
+    showStatus('loading');
+
+    try {
+        const queryParams = new URLSearchParams({
+            name: name,
+            place: place,
+            dob: dobFormatted
+        });
+        
+        const response = await fetch(`${API_BASE}/api/panchanga?${queryParams.toString()}`);
+        if (!response.ok) {
+            const errData = await response.json();
+            throw new Error(errData.detail || 'API error');
+        }
+        
+        const data = await response.json();
+        renderPanchangaResults(data);
+    } catch (err) {
+        console.error(err);
+        pErrorText.textContent = err.message || 'Failed to calculate. Verify format and try again.';
+        showStatus('error');
+    }
+}
+
+function showStatus(status) {
+    pEmptyState.classList.add('hidden');
+    pLoadingState.classList.add('hidden');
+    pErrorState.classList.add('hidden');
+    pResultsContainer.classList.add('hidden');
+
+    if (status === 'empty') {
+        pEmptyState.classList.remove('hidden');
+        pMetaSummary.textContent = "Enter details and press calculate";
+    } else if (status === 'loading') {
+        pLoadingState.classList.remove('hidden');
+    } else if (status === 'error') {
+        pErrorState.classList.remove('hidden');
+    } else if (status === 'results') {
+        pResultsContainer.classList.remove('hidden');
+    }
+}
+
+// Result mapping
+function renderPanchangaResults(data) {
+    document.getElementById('res-name').textContent = data.name;
+    document.getElementById('res-place').textContent = data.place;
+    document.getElementById('res-datetime').textContent = data.date;
+    document.getElementById('res-ascendant').textContent = data.ascendant || '-';
+    document.getElementById('res-moonsign').textContent = data['moon sign'] || '-';
+    document.getElementById('res-nakshatra').textContent = data.nakshatra || '-';
+    document.getElementById('res-tithi').textContent = data.tithi || '-';
+    document.getElementById('res-yoga').textContent = data.yoga || '-';
+    document.getElementById('res-karana').textContent = data.karana || '-';
+    document.getElementById('res-vaara').textContent = data.vaara || '-';
+
+    pMetaSummary.textContent = `Panchanga calculated for ${data.name} at ${data.place}`;
+    showStatus('results');
+}
+
+// Calculate only when explicit button is clicked
+document.getElementById('panchanga-submit').addEventListener('click', calculatePanchanga);
+
+// Populate default date picker values and text labels
+syncDateTimeUI();
 
 init();

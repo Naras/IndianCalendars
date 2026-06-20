@@ -1,11 +1,14 @@
 import uvicorn
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-import sys, os
+import sys, os, datetime
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+sys.path.append(os.path.abspath(os.path.dirname(__file__)))
 from basicFunctionsGraphsAnimations import basicDictsLists, mappables
 import transliterate, config
+import jyotish_ganit.panchanga as panchanga
+from geopy.geocoders import Nominatim
 
 summary = """
  Indian Calendars Backend API. 
@@ -21,8 +24,8 @@ description = """
 """
 
 app = FastAPI(title="Indian Calendars REST API Services",
-    docs_url=None if config.settings.env == "production" else "/docs",
-    redoc_url=None if config.settings.env == "production" else "/redoc",
+              docs_url=None if config.settings.env == "production" else "/docs",
+              redoc_url=None if config.settings.env == "production" else "/redoc",
               summary=summary, description=description,
               version="0.0.1",
               contact={
@@ -40,8 +43,10 @@ def health_check(): return {"status": "available", "environment": config.setting
 @app.get("/api/cycles")
 def get_cycles(script: str = "devanagari"):
     def trans(label, scr):
+        if not isinstance(label, str): return label
         if scr.lower() != 'devanagari': return transliterate.transliterate(label, scr)
         return label
+        
     res = {}
     for k, v in basicDictsLists.items():
         res[k] = {
@@ -69,6 +74,7 @@ def get_gears(cycle1: str, cycle2: str, start1: str = "", start2: str = "", scri
         start2_idx = int(start2) % len(list2)
     # Apply Transliteration
     def trans(label, scr):
+        if not isinstance(label, str): return label
         if scr.lower() != 'devanagari': return transliterate.transliterate(label, scr)
         return label
     items1 = [trans(label, script) for label in list1]
@@ -89,6 +95,41 @@ def get_gears(cycle1: str, cycle2: str, start1: str = "", start2: str = "", scri
         "start2_index": start2_idx,
         "total_segments": max(len(list1), len(list2))
     }
+@app.get('/api/panchanga')
+def get_panchanga(name: str, place: str, dob: str):
+    geolocator = Nominatim(user_agent=f"my_coordinate_finder_{abs(hash(name)) % 10000}")
+    try:
+        # Standardize dob format. Handle both space and ISO 'T' separators.
+        normalized_dob = dob.replace('T', ' ')
+        dob_parts = normalized_dob.split(' ')
+        if len(dob_parts) != 2:
+            raise ValueError("Expected format 'YYYY/MM/DD HH:MM'")
+            
+        dobDate, dobTime = dob_parts
+        # Support both YYYY-MM-DD and YYYY/MM/DD formats
+        dobDate = dobDate.replace('-', '/')
+        yyyy, mm, dd = dobDate.split('/')
+        hh, mn = dobTime.split(':')
+        
+        dob_dt = datetime.datetime(int(yyyy), int(mm), int(dd), int(hh), int(mn))
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Invalid date format: '{dob}'. Expected 'YYYY/MM/DD HH:MM'. Detail: {str(e)}")
 
+    try:
+        chart, panchang = panchanga.chart_panchanga(geolocator, name, place, dob_dt)
+        return {
+            'name': name,
+            'place': place,
+            'date': dob,
+            'ascendant': chart.d1_chart.houses[0].sign,
+            'moon sign': chart.d1_chart.planets[1].sign,
+            'nakshatra': chart.panchanga.nakshatra,
+            'tithi': panchang.tithi,
+            'yoga': panchang.yoga,
+            'karana': panchang.karana,
+            'vaara': panchang.vaara
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error calculating panchanga: {str(e)}")
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)

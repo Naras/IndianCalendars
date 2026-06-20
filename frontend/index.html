@@ -3,11 +3,11 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Indian Calendar Dashboard</title>
+    <title>AstroCalendar - Indian Calendars & Panchanga</title>
     <style>
       body {
-        font-family: 'Arial Unicode MS', 'Kohinoor Devanagari', sans-serif;
-        background-color: #1e1e1e;
+        font-family: 'Inter', 'Arial Unicode MS', 'Kohinoor Devanagari', sans-serif;
+        background-color: #121212;
         color: #fff;
         margin: 0;
         display: flex;
@@ -16,111 +16,621 @@
         height: 100vh;
         overflow: hidden;
       }
+      
+      /* Navigation Bar */
+      #navbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        width: 100%;
+        padding: 15px 30px;
+        background: rgba(25, 25, 25, 0.75);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        z-index: 100;
+        box-sizing: border-box;
+      }
+      .nav-logo {
+        font-size: 1.3rem;
+        font-weight: 700;
+        background: linear-gradient(135deg, #00c6ff, #0072ff);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        letter-spacing: 1px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .nav-links {
+        display: flex;
+        gap: 12px;
+      }
+      .nav-tab {
+        background: transparent;
+        color: #aaa;
+        border: 1px solid transparent;
+        padding: 8px 16px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        cursor: pointer;
+        border-radius: 6px;
+        transition: all 0.25s ease;
+      }
+      .nav-tab:hover {
+        color: #fff;
+        background: rgba(255, 255, 255, 0.05);
+      }
+      .nav-tab.active {
+        color: #fff;
+        background: rgba(0, 198, 255, 0.15);
+        border: 1px solid rgba(0, 198, 255, 0.3);
+        box-shadow: 0 0 12px rgba(0, 198, 255, 0.15);
+      }
+
+      /* View Pages */
+      .view-page {
+        display: none;
+        width: 100%;
+        height: calc(100vh - 65px);
+        box-sizing: border-box;
+      }
+      .view-page.active {
+        display: flex;
+      }
+
+      /* Wheels View Specific */
+      #wheels-view {
+        flex-direction: column;
+        overflow: hidden;
+      }
+
       #control-panel {
-        background-color: #2c2c2c;
-        padding: 15px;
-        border-radius: 8px;
+        background-color: #1e1e1e;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        padding: 12px 20px;
         display: flex;
         flex-wrap: wrap;
-        gap: 15px;
+        gap: 12px;
         align-items: center;
         justify-content: center;
-        margin-top: 10px;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+        width: 100%;
+        box-sizing: border-box;
       }
       .control-group {
         display: flex;
         flex-direction: column;
-        gap: 5px;
+        gap: 4px;
       }
-      label { font-size: 12px; color: #aaa; text-transform: uppercase; letter-spacing: 1px; }
-      select, button, input[type="number"] {
-        padding: 8px 12px;
-        background-color: #444;
+      .checkbox-group {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        margin-top: 14px;
+      }
+      .checkbox-group label {
+        font-size: 11px;
+        color: #aaa;
+        cursor: pointer;
+      }
+      label { font-size: 11px; color: #bbb; text-transform: uppercase; letter-spacing: 1px; font-weight: 600; }
+      select, button.play-btn, input[type="number"] {
+        padding: 6px 10px;
+        background-color: #2a2a2a;
         color: white;
-        border: 1px solid #555;
+        border: 1px solid #3a3a3a;
         border-radius: 4px;
-        font-size: 14px;
+        font-size: 13px;
+        transition: border-color 0.2s;
       }
-      select:focus, button:focus, input:focus { outline: none; border-color: #4CAF50; }
-      #playback-controls { display: flex; gap: 10px; margin-top: 10px; align-items: flex-end;}
-      button.play-btn { background-color: #4CAF50; border: none; cursor: pointer; transition: 0.2s;}
-      button.play-btn:hover { background-color: #45a049; }
+      select:focus, button:focus, input:focus { outline: none; border-color: #00c6ff; }
+      #playback-controls { display: flex; gap: 8px; align-items: flex-end;}
+      button.play-btn { background-color: #00c6ff; border: none; color: #000; font-weight: 600; cursor: pointer; transition: 0.2s;}
+      button.play-btn:hover { background-color: #0099cc; }
       
       #graph {
         flex-grow: 1;
         display: flex;
         align-items: center;
         justify-content: center;
+        width: 100%;
+        background-color: #121212;
       }
       svg text {
         font-size: 11px;
-        fill: #000;
+        fill: #121212;
         pointer-events: none;
-        font-weight: 500;
+        font-weight: 600;
       }
-      .gear-path { stroke: #333; stroke-width: 1px; }
+      .gear-path { stroke: #2a2a2a; stroke-width: 1px; }
+
+      /* Panchanga View Specific */
+      #panchanga-view {
+        padding: 30px;
+        max-width: 1200px;
+        margin: 0 auto;
+        gap: 30px;
+        flex-direction: row;
+        justify-content: center;
+        align-items: flex-start;
+        overflow-y: auto;
+      }
+      @media (max-width: 900px) {
+        #panchanga-view {
+          flex-direction: column;
+          align-items: center;
+          width: 100%;
+        }
+      }
+      .panchanga-form-card {
+        background: rgba(30, 30, 30, 0.6);
+        backdrop-filter: blur(15px);
+        -webkit-backdrop-filter: blur(15px);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 12px;
+        padding: 25px;
+        width: 100%;
+        max-width: 440px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+        box-sizing: border-box;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+        flex-shrink: 0;
+      }
+      .form-header {
+        margin: 0;
+        font-size: 1.35rem;
+        font-weight: 700;
+        background: linear-gradient(135deg, #00c6ff, #0072ff);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+      }
+      .panchanga-input-group {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+      .panchanga-input-group label {
+        font-size: 11px;
+        color: #aaa;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        font-weight: 600;
+      }
+      .panchanga-input-group input[type="text"],
+      .panchanga-input-group input[type="date"],
+      .panchanga-input-group input[type="time"] {
+        padding: 10px 12px;
+        background-color: rgba(255, 255, 255, 0.05);
+        color: white;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 6px;
+        font-size: 14px;
+        transition: all 0.25s ease;
+        width: 100%;
+        box-sizing: border-box;
+      }
+      .panchanga-input-group input:focus {
+        outline: none;
+        border-color: #00c6ff;
+        background-color: rgba(255, 255, 255, 0.08);
+        box-shadow: 0 0 8px rgba(0, 198, 255, 0.25);
+      }
+      
+      /* Quick Incrementers */
+      .incrementers-panel {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        background: rgba(0, 0, 0, 0.2);
+        padding: 14px;
+        border-radius: 8px;
+        border: 1px solid rgba(255, 255, 255, 0.04);
+      }
+      .inc-title {
+        font-size: 10px;
+        color: #bbb;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-bottom: 4px;
+        font-weight: bold;
+      }
+      .incrementer-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 10px;
+      }
+      .inc-label {
+        font-size: 12px;
+        color: #ccc;
+        width: 50px;
+      }
+      .inc-controls {
+        display: flex;
+        align-items: center;
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 6px;
+        overflow: hidden;
+      }
+      .inc-btn {
+        background: transparent;
+        color: #fff;
+        border: none;
+        width: 28px;
+        height: 28px;
+        cursor: pointer;
+        font-size: 11px;
+        font-weight: bold;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: background 0.2s;
+      }
+      .inc-btn:hover {
+        background: rgba(255, 255, 255, 0.08);
+        color: #00c6ff;
+      }
+      .inc-btn:active {
+        background: rgba(255, 255, 255, 0.15);
+      }
+      .inc-val {
+        min-width: 50px;
+        text-align: center;
+        font-weight: 600;
+        font-size: 13px;
+        color: #00c6ff;
+        font-family: monospace;
+      }
+
+      .submit-btn {
+        background: linear-gradient(135deg, #00c6ff, #0072ff);
+        color: white;
+        font-size: 14px;
+        font-weight: 600;
+        padding: 10px;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: all 0.25s ease;
+        box-shadow: 0 4px 12px rgba(0, 198, 255, 0.2);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+      .submit-btn:hover {
+        filter: brightness(1.1);
+        box-shadow: 0 4px 18px rgba(0, 198, 255, 0.35);
+      }
+      .submit-btn:active {
+        transform: translateY(1px);
+      }
+
+      .panchanga-results-card {
+        background: rgba(30, 30, 30, 0.6);
+        backdrop-filter: blur(15px);
+        -webkit-backdrop-filter: blur(15px);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 12px;
+        padding: 25px;
+        width: 100%;
+        max-width: 650px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+        box-sizing: border-box;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+        min-height: 400px;
+      }
+      .results-header {
+        display: flex;
+        flex-direction: column;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        padding-bottom: 15px;
+      }
+      .results-title {
+        font-size: 1.35rem;
+        font-weight: 700;
+        margin: 0;
+        background: linear-gradient(135deg, #f857a6, #ff5858);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+      }
+      .results-subtitle {
+        font-size: 11px;
+        color: #bbb;
+        margin-top: 5px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+      .results-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+      }
+      @media (max-width: 500px) {
+        .results-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+      .result-item {
+        background: rgba(255, 255, 255, 0.02);
+        border: 1px solid rgba(255, 255, 255, 0.04);
+        border-radius: 8px;
+        padding: 12px 14px;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        transition: all 0.25s ease;
+      }
+      .result-item:hover {
+        background: rgba(255, 255, 255, 0.04);
+        border-color: rgba(0, 198, 255, 0.25);
+        transform: translateY(-2px);
+      }
+      .result-label {
+        font-size: 9px;
+        color: #bbb;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        font-weight: bold;
+      }
+      .result-val {
+        font-size: 14px;
+        font-weight: 600;
+        color: #fff;
+      }
+      .status-message {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-grow: 1;
+        font-size: 14px;
+        color: #666;
+        text-align: center;
+        padding: 40px;
+        flex-direction: column;
+        gap: 12px;
+      }
+      .spinner {
+        width: 32px;
+        height: 32px;
+        border: 3px solid rgba(255, 255, 255, 0.05);
+        border-top: 3px solid #00c6ff;
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+      }
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+      
+      .hidden {
+        display: none !important;
+      }
     </style>
   </head>
   <body>
-    <div id="control-panel">
-      <div class="control-group">
-        <label>Visual Mode</label>
-        <select id="mode">
-          <option value="gears">Interlocking Gears</option>
-          <option value="concentric">Static Concentric</option>
-          <option value="sync_concentric">Synced Concentric</option>
-        </select>
+    <!-- Premium Top Navigation Bar -->
+    <nav id="navbar">
+      <div class="nav-logo">
+        <span>🌌</span> AstroCalendar
       </div>
-      <div class="control-group">
-        <label>Script</label>
-        <select id="script">
-          <option value="devanagari">Devanagari</option>
-          <option value="kannada">Kannada</option>
-          <option value="IAST">IAST</option>
-          <option value="ITRANS">ITRANS</option>
-        </select>
+      <div class="nav-links">
+        <button class="nav-tab active" data-target="wheels-view">Calendar Gears</button>
+        <button class="nav-tab" data-target="panchanga-view">Panchanga Calculator</button>
       </div>
-      <div class="control-group">
-        <label>Cycle 1 (Outer/Left)</label>
-        <select id="cycle1"></select>
+    </nav>
+
+    <!-- Tab 1: Calendar Wheel Gears -->
+    <div id="wheels-view" class="view-page active">
+      <div id="control-panel">
+        <div class="control-group">
+          <label>Visual Mode</label>
+          <select id="mode">
+            <option value="gears">Interlocking Gears</option>
+            <option value="concentric">Static Concentric</option>
+            <option value="sync_concentric">Synced Concentric</option>
+          </select>
+        </div>
+        <div class="control-group">
+          <label>Script</label>
+          <select id="script">
+            <option value="devanagari">Devanagari</option>
+            <option value="kannada">Kannada</option>
+            <option value="IAST">IAST</option>
+            <option value="ITRANS">ITRANS</option>
+          </select>
+        </div>
+        <div class="control-group">
+          <label>Cycle 1 (Outer/Left)</label>
+          <select id="cycle1"></select>
+        </div>
+        <div class="control-group">
+          <label>Start 1</label>
+          <select id="start1"></select>
+        </div>
+        <div class="control-group">
+          <label>Cycle 2 (Inner/Right)</label>
+          <select id="cycle2"></select>
+        </div>
+        <div class="control-group">
+          <label>Start 2</label>
+          <select id="start2"></select>
+        </div>
+        <div class="control-group">
+          <label>Radius 1</label>
+          <input type="number" id="radius1" value="150" min="50" max="500" style="width: 60px;">
+        </div>
+        <div class="control-group">
+          <label>Radius 2</label>
+          <input type="number" id="radius2" value="150" min="50" max="500" style="width: 60px;">
+        </div>
+        <div class="control-group">
+          <label>Font Size</label>
+          <input type="number" id="font-size" value="11" min="5" max="30" style="width: 60px;">
+        </div>
+        <div class="checkbox-group">
+          <input type="checkbox" id="checkValidity" name="checkTheValidity" checked>
+          <label for="checkValidity">Check for valid matching circles</label>
+        </div>
+        <div id="playback-controls">
+          <button id="btn-prev" class="play-btn">◀ Prev</button>
+          <button id="btn-play" class="play-btn">⏯ Play/Pause</button>
+          <button id="btn-next" class="play-btn">Next ▶</button>
+        </div>
       </div>
-      <div class="control-group">
-        <label>Start 1</label>
-        <select id="start1"></select>
-      </div>
-      <div class="control-group">
-        <label>Cycle 2 (Inner/Right)</label>
-        <select id="cycle2"></select>
-      </div>
-      <div class="control-group">
-        <label>Start 2</label>
-        <select id="start2"></select>
-      </div>
-      <div class="control-group">
-        <label>Radius 1</label>
-        <input type="number" id="radius1" value="150" min="50" max="500" style="width: 60px;">
-      </div>
-      <div class="control-group">
-        <label>Radius 2</label>
-        <input type="number" id="radius2" value="150" min="50" max="500" style="width: 60px;">
-      </div>
-      <div class="control-group">
-        <label>Font Size</label>
-        <input type="number" id="font-size" value="11" min="5" max="30" style="width: 60px;">
-      </div>
-      <div class="checkbox-group">
-        <input type="checkbox" id="checkValidity" name="checkTheValidity" checked>
-        <label for="vehicle1">Check for valid matching circles</label>
-      </div>
-      <div id="playback-controls">
-        <button id="btn-prev" class="play-btn">◀ Prev</button>
-        <button id="btn-play" class="play-btn">⏯ Play/Pause</button>
-        <button id="btn-next" class="play-btn">Next ▶</button>
+      
+      <div id="graph"></div>
+    </div>
+
+    <!-- Tab 2: Panchanga Astro-Calculator -->
+    <div id="panchanga-view" class="view-page">
+      <!-- Inputs Card -->
+      <form id="panchanga-form" class="panchanga-form-card" onsubmit="event.preventDefault();">
+        <h2 class="form-header">Birth Panchanga</h2>
+        
+        <div class="panchanga-input-group">
+          <label for="panchanga-name">Person Name</label>
+          <input type="text" id="panchanga-name" placeholder="Enter name" value="Narasimhan M.G.">
+        </div>
+
+        <div class="panchanga-input-group">
+          <label for="panchanga-place">Birth Place (Time Zone fallback)</label>
+          <input type="text" id="panchanga-place" placeholder="e.g. Mysore, India or Europe/Oslo" value="Mysore, India">
+        </div>
+
+        <div class="panchanga-input-group">
+          <label for="panchanga-date">Birth Date</label>
+          <input type="date" id="panchanga-date">
+        </div>
+
+        <div class="panchanga-input-group">
+          <label for="panchanga-time">Birth Time</label>
+          <input type="time" id="panchanga-time">
+        </div>
+
+        <!-- Year / Month / Day / Hour / Minute Incrementers / Decrementers -->
+        <div class="incrementers-panel">
+          <div class="inc-title">Quick Fine-Tuning</div>
+          
+          <div class="incrementer-row">
+            <span class="inc-label">Year</span>
+            <div class="inc-controls">
+              <button type="button" class="inc-btn" id="dec-year">▼</button>
+              <span id="val-year" class="inc-val">----</span>
+              <button type="button" class="inc-btn" id="inc-year">▲</button>
+            </div>
+          </div>
+
+          <div class="incrementer-row">
+            <span class="inc-label">Month</span>
+            <div class="inc-controls">
+              <button type="button" class="inc-btn" id="dec-month">▼</button>
+              <span id="val-month" class="inc-val">--</span>
+              <button type="button" class="inc-btn" id="inc-month">▲</button>
+            </div>
+          </div>
+
+          <div class="incrementer-row">
+            <span class="inc-label">Day</span>
+            <div class="inc-controls">
+              <button type="button" class="inc-btn" id="dec-day">▼</button>
+              <span id="val-day" class="inc-val">--</span>
+              <button type="button" class="inc-btn" id="inc-day">▲</button>
+            </div>
+          </div>
+
+          <div class="incrementer-row">
+            <span class="inc-label">Hour</span>
+            <div class="inc-controls">
+              <button type="button" class="inc-btn" id="dec-hour">▼</button>
+              <span id="val-hour" class="inc-val">--</span>
+              <button type="button" class="inc-btn" id="inc-hour">▲</button>
+            </div>
+          </div>
+
+          <div class="incrementer-row">
+            <span class="inc-label">Minute</span>
+            <div class="inc-controls">
+              <button type="button" class="inc-btn" id="dec-minute">▼</button>
+              <span id="val-minute" class="inc-val">--</span>
+              <button type="button" class="inc-btn" id="inc-minute">▲</button>
+            </div>
+          </div>
+        </div>
+
+        <button type="submit" id="panchanga-submit" class="submit-btn">Calculate Panchanga</button>
+      </form>
+
+      <!-- Results Card -->
+      <div class="panchanga-results-card">
+        <div class="results-header">
+          <h2 class="results-title">Calculated Astro Data</h2>
+          <div class="results-subtitle" id="panchanga-summary-meta">Enter details and press calculate</div>
+        </div>
+
+        <div id="panchanga-empty-state" class="status-message">
+          <span>🔮</span> Fill out the birth details on the left to calculate the specific Panchanga components.
+        </div>
+
+        <div id="panchanga-loading" class="status-message hidden">
+          <div class="spinner"></div>
+          <div>Querying geolocator & computing birth chart...</div>
+        </div>
+
+        <div id="panchanga-error" class="status-message hidden" style="color: #ff5858;">
+          <span>⚠️</span> <span id="error-text">Failed to fetch panchanga calculations.</span>
+        </div>
+
+        <div id="panchanga-results-container" class="results-grid hidden">
+          <div class="result-item">
+            <span class="result-label">Name</span>
+            <span class="result-val" id="res-name">-</span>
+          </div>
+          <div class="result-item">
+            <span class="result-label">Birth Place</span>
+            <span class="result-val" id="res-place">-</span>
+          </div>
+          <div class="result-item">
+            <span class="result-label">Date & Time</span>
+            <span class="result-val" id="res-datetime">-</span>
+          </div>
+          <div class="result-item" style="border-color: rgba(0, 198, 255, 0.15)">
+            <span class="result-label" style="color: #00c6ff">Ascendant (Lagna)</span>
+            <span class="result-val" id="res-ascendant">-</span>
+          </div>
+          <div class="result-item" style="border-color: rgba(0, 198, 255, 0.15)">
+            <span class="result-label" style="color: #00c6ff">Moon Sign (Rashi)</span>
+            <span class="result-val" id="res-moonsign">-</span>
+          </div>
+          <div class="result-item">
+            <span class="result-label">Nakshatra</span>
+            <span class="result-val" id="res-nakshatra">-</span>
+          </div>
+          <div class="result-item">
+            <span class="result-label">Tithi</span>
+            <span class="result-val" id="res-tithi">-</span>
+          </div>
+          <div class="result-item">
+            <span class="result-label">Yoga</span>
+            <span class="result-val" id="res-yoga">-</span>
+          </div>
+          <div class="result-item">
+            <span class="result-label">Karana</span>
+            <span class="result-val" id="res-karana">-</span>
+          </div>
+          <div class="result-item">
+            <span class="result-label">Vaara (Weekday)</span>
+            <span class="result-val" id="res-vaara">-</span>
+          </div>
+        </div>
       </div>
     </div>
-    
-    <div id="graph"></div>
+
     <script type="module" src="/main.js"></script>
   </body>
 </html>

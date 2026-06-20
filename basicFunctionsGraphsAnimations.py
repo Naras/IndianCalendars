@@ -1,8 +1,8 @@
 # import random
 import transliterate
-import matplotlib.pyplot as plt
-import matplotlib.patches as patches
-import numpy as np
+# import matplotlib.pyplot as plt
+# import matplotlib.patches as patches
+# import numpy as np
 
 '''def rashiOrnakshatraFromNumber(num=1, clas='राशि'):
     noof = 8 if clas == 'राशि' else 3 # if clas == 'नक्षत्र' else 0
@@ -109,7 +109,7 @@ basicDictsLists = {
 'ग्रह':['सूर्य', 'चंद्र', 'मंगळ', 'बुध', 'गुरु', 'शुक्र', 'शनि', 'राहु', 'केतु'],
 'नक्षत्र':['अश्विनि', 'भरणि', 'कृत्तिक', 'रोहिणि', 'मृगशिर', 'आरिद्र', 'पुनर्वसु', 'पुष्य', 'आश्लेष', 'मखा', 'पूर्वफल्गुणि', 'उत्तरफल्गुणि', 'हस्त', 'चित्र', 'स्वाति', 'विशाख', 'अनुराध', 'जेष्ट', 'मूल', 'पूर्वाषाढ', 'उत्तराषाढ', 'श्रावण', 'धनिष्ट', 'शतभिष', 'पूर्वाभाद्र', 'उत्तराभाद्र', 'रेवति'],
 'राशि':['मेष', 'वृषभ', 'मिथुन', 'कर्काटक', 'सिंह', 'कन्या', 'तुला', 'वृश्चिक', 'धनु', 'मकर', 'कुंभ', 'मीन'],
-'वार':[ 'रविवार', 'सोमवार', 'मंगलवार', 'बुधवार', 'गुरुवार', 'शुक्रवार', 'शनिवार'],
+'वार':[ 'रविवार', 'सोमवार', 'मंगळवार', 'बुधवार', 'गुरुवार', 'शुक्रवार', 'शनिवार'],
 'तिथि':['प्रतिपाद', 'द्वितीय', 'तृतीय', 'चतुर्थि', 'पंचमि', 'षष्टि', 'सप्तमि', 'अष्टमि', 'नवमि', 'दशमि', 'एकादशि', 'द्वादशि', 'त्रयोदशि', 'चतुर्दशि', 'पूर्णिम/अमावास्य'],
 'पक्ष':['शुक्ल', 'कृष्ण'],
 'मास':['चैत्र', 'वैशाख', 'जेष्ट', 'आषाढ', 'श्रावण', 'भाद्रपद', 'आश्विन', 'कार्तिक', 'अग्रहायण', 'पौष', 'माघ', 'फाल्गुण'],
@@ -130,7 +130,34 @@ def mappables(argk, argv):
                 'ग्रह':['Planets', 'Zodiac', 'राशि'], 'Planets':['Zodiac', 'राशि', 'ग्रह'],
                 'भूत':['Elements', 'Zodiac', 'राशि'], 'तत्त्व':['Types', 'Zodiac', 'राशि'],
                 }
-    if argk in mappable.keys() and argv in mappable[argk]: return True, basicDictsLists[argk], basicDictsLists[argv]
-    elif argv in mappable.keys() and argk in mappable[argv]: return True, basicDictsLists[argk], basicDictsLists[argv]
+    rules = {'राशि':['भूत','तत्त्व'], 'तिथि':['वार', 'शुक्ल च कृष्णा तिथियाँ', 'नक्षत्र'], 'शुक्ल च कृष्णा तिथियाँ':['वार', 'नक्षत्र'], 'वार':['नक्षत्र']} # pairs with equal units of time
+    lenMax, lenMin = max(len(basicDictsLists[argk]), len(basicDictsLists[argv])), min(len(basicDictsLists[argk]), len(basicDictsLists[argv]))
+    ratio = lenMax // lenMin
+    reminder = lenMax % lenMin
+    if (argk in rules.keys() and argv in rules[argk]) or (argv in rules.keys() and argk in rules[argv]):
+        if lenMax == len(basicDictsLists[argk]):
+            reminderList = basicDictsLists[argv][-reminder:] if reminder > 0 else []
+            return True, basicDictsLists[argk], basicDictsLists[argv] * ratio + reminderList
+        else:
+            reminderList = basicDictsLists[argk][-reminder:] if reminder > 0 else []
+            return True, basicDictsLists[argk] * ratio + reminderList, basicDictsLists[argv]
+    elif argk in mappable.keys() and argv in mappable[argk]:
+        return True, basicDictsLists[argk], basicDictsLists[argv]
+    elif argv in mappable.keys() and argk in mappable[argv]:
+        return True, basicDictsLists[argk], basicDictsLists[argv]
     elif argk == argv: return True, basicDictsLists[argk], basicDictsLists[argv]
-    return False, None, None
+    return False, basicDictsLists[argk], basicDictsLists[argv]
+
+if __name__ == "__main__":
+    print('cycle Ratios\n          ratio, angle, degrees, mins, secs, angle, degrees, mins, secs')
+    for pairs in [
+    ["राशि", "तत्त्व"], ["राशि", "भूत"],["भूत", "राशि"],["तत्त्व", "राशि"],
+        ["वार", "तिथि"], ["तिथि", "वार"],
+        ["शुक्ल च कृष्णा तिथियाँ", "तिथि"],["तिथि", "शुक्ल च कृष्णा तिथियाँ"],
+    ["ऋतु", "मास"], ["राशि", "मास"], ["राशि", "नक्षत्र"],
+        # ["राशि", "तत्त्व"], ["राशि", "भूत"], ["वार", "तिथि"], ["शुक्ल च कृष्णा तिथियाँ", "तिथि"],
+        ["तिथि", "नक्षत्र"],
+    ]:
+        mapped, pair1, pair2 = mappables(pairs[0], pairs[1])
+        if mapped: print(f'{pairs[0]}:{pairs[1]}: {cycleRatios(pair1, pair2)}\n{pair1}\n{pair2}')
+        else: print(f'{pairs[0]} incompatible with {pairs[1]}')
